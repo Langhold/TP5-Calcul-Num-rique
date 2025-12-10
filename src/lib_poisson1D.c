@@ -6,12 +6,36 @@
 #include "lib_poisson1D.h"
 
 void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
-  // TODO: Fill AB with the tridiagonal Poisson operator
+	
+	for(int i = 0; i<*kv; ++i){
+		for(int j = 0; j<*lab; ++j){
+			AB[i*(*la+*kv) + j] = 0;
+		}
+	}
+	
+	for (int i = 0; i<*la; ++i) {
+		int indx =i* *lab+*kv;
+		AB[indx] = -1;
+		AB[indx+1] =  2;
+		AB[indx+2] = -1;
+	}
+	AB[*kv] = 0;
+	AB[*la**lab-1] = 0;
+	
 }
 
 void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *kv){
-  // TODO: Fill AB with the identity matrix
-  // Only the main diagonal should have 1, all other entries are 0
+	for(int i = 0; i<*kv; ++i){
+		for(int j = 0; j<*lab; ++j){
+			AB[i*(*la+*kv) + j] = 0;
+		}
+	}
+	
+	for (int i = 0; i<*la; ++i) {
+		int indx =i* *lab+*kv +1;
+		AB[indx] = 1;
+		printf("ah !");
+	}
 }
 
 void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){

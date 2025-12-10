@@ -78,7 +78,17 @@ int main(int argc,char *argv[])
   AB = (double *) malloc(sizeof(double)*lab*la);
 
   set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
+	for(int i = 0; i<kv+la; ++i){
+		for(int j = 0; j<lab; ++j){
+			printf("%fd ", AB[j*lab+i]);
+		}
+		printf("\n");
+	}
+	printf("Solution with LAPACK\n");
   write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat");
+	
+	double * ID = (double *) malloc(sizeof(double)*lab*la);
+	write_GB_operator_colMajor_poisson1D(ID, &lab, &la, "ID.dat");
 
   printf("Solution with LAPACK\n");
   ipiv = (int *) calloc(la, sizeof(int));  /* Pivot indices for LU factorization */

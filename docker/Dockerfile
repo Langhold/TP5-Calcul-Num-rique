@@ -10,3 +10,5 @@ ENV HOSTNAME=ambre
 RUN mkdir bin && \
   make all && \
   make run
+
+RUN cat ID.dat
