@@ -38,16 +38,16 @@ void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *k
 }
 
 void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){
-	RHS[0] = *BC0;
-	RHS[*la-1] = *BC1;
-	for (int i = 1; i<*la-1; ++i) {
-		RHS[i] = 0;
-	}
+    for (int i = 0; i < *la; ++i) {
+        RHS[i] = 0.0;
+    }
+	RHS[0] += *BC0;
+	RHS[*la-1] += *BC1;
 }
 
 void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* BC0, double* BC1){
 	for (int i = 0; i<*la; ++i) {
-		EX_SOL[i] = *BC0 + (double)i * (*BC1-*BC0);
+		EX_SOL[i] = *BC0 + X[i] * (*BC1-*BC0);
 	}
 }
 
@@ -55,21 +55,21 @@ void set_grid_points_1D(double* x, int* la){
 	const double h = 1/((double)*la+1);
 	for (int i = 0; i<*la; ++i) {
 		x[i] = (i+1)*h;
-		printf("%f ",x[i]);
 	}
-	printf("\n");
 }
 
 double relative_forward_error(double* x, double* y, int* la){
-	double ferr = 0;
-	for (int i = 0; i<*la; ++i) {
-		printf("y(%d), x(%d) = %f = %f\n", i, i, x[i], y[i]);
-	}
-	cblas_daxpy(*la, -1, x, 1, y, 1);
-	ferr *= cblas_dnrm2(*la,y,1) / cblas_dnrm2(*la,x,1);for (int i = 0; i<*la; ++i) {
-		printf("y(%d) - x(%d) = %f\n", i, i, y[i]);
-	}
-  return ferr;
+    double diff_norm = 0.0;
+    double x_norm = 0.0;
+
+    for (int i = 0; i < *la; ++i) {
+        const double diff = y[i] - x[i];
+        diff_norm += diff * diff;
+        x_norm += x[i] * x[i];
+    }
+
+    double ferr = sqrt(diff_norm / x_norm);
+    return ferr;
 }
 
 int indexABCol(int i, int j, int *lab){
@@ -90,7 +90,6 @@ int dgbtrftridiag(int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *i
 		int indx_kk = indexABColtridiag(k,k,lab,ku);
 		if (AB[indx_kk] == 0.0f) {
 			*info = -1;
-			printf("k=%d\n", k);
 			return *info;
 		}
 		
@@ -106,3 +105,4 @@ int dgbtrftridiag(int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *i
 	}
   return *info;
 }
+
