@@ -14,8 +14,7 @@ void eig_poisson1D(double* eigval, int *la){
 }
 
 double eigmax_poisson1D(int *la){
-	const double h = 1.0/(*la+1);
-    return 4/h/h;
+	return 4;
 }
 
 double eigmin_poisson1D(int *la){
@@ -95,7 +94,7 @@ void extract_MB_gauss_seidel_tridiag(double *AB, double *MB, int *lab, int *la,i
 		MB[kk+ *kv+2]=-AB[kk+ *kv+2];
 	}
 	if (*kv == 1) {MB[1]=0;}
-	
+
 	MB[(*lab)*(*la)-1]=0.0;
 }
 
@@ -134,12 +133,12 @@ void richardson_MB(double *AB, double *RHS, double *X, double *MB, int *lab, int
 		
 		for (int i = 0; i < *lab*n; ++i) temp[i] = MB[i];
 		
-		LAPACKE_dgbsv(LAPACK_COL_MAJOR, *la, *kl, *ku, 1, MB, *lab, ipiv, r, *la); //M-1*r=z
+		LAPACKE_dgbsv(LAPACK_COL_MAJOR, *la, *kl, *ku, 1, MB, *lab, ipiv, r, *la); 	//M-1*r=z
 		
 		for (int i = 0; i < *lab; ++i) MB[i] = temp[i];
 		for (int i = 0; i < n; ++i) z[i] = r[i];
 		
-		cblas_daxpy(*la, 1.0, z, 1, X, 1); //x = x + z
+		cblas_daxpy(*la, 1.0, z, 1, X, 1);										 	//x=x+z
 		for (int i = 0; i < n; ++i) r[i] = RHS[i];
 		cblas_dgbmv(CblasColMajor, CblasNoTrans, n, n, *kl, *ku,-1.0, AB, *lab, X, 1, 1.0, r, 1);
 		++k;
