@@ -14,11 +14,12 @@ void eig_poisson1D(double* eigval, int *la){
 }
 
 double eigmax_poisson1D(int *la){
-  return 4;
+	const double h = 1.0/(*la+1);
+    return 4/h/h;
 }
 
 double eigmin_poisson1D(int *la){
-  return 0;
+    return 0;
 }
 
 double richardson_alpha_opt(int *la){
