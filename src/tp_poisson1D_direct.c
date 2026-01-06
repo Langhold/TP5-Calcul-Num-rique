@@ -102,7 +102,9 @@ int main(int argc,char *argv[])
 
   /* LU for tridiagonal matrix (can replace dgbtrf_) - custom implementation */
   if (IMPLEM == TRI) {
-    dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+	  int reinfo = info;
+    info = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &reinfo);
+	  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU2.dat");  /* LU factors */
   }
 
   /* Back-substitution to solve the system after factorization */
@@ -118,7 +120,11 @@ int main(int argc,char *argv[])
 
   /* Alternative: solve directly using dgbsv */
   if (IMPLEM == SV) {
-    // TODO : use dgbsv
+	  
+		int lab  = 2*kl + ku + 1;   // OBLIGATOIRE
+
+		  info = LAPACKE_dgbsv(LAPACK_COL_MAJOR, la, kl, ku, NRHS, AB, lab, ipiv, RHS, la);
+		  if (info!=0){printf("\n INFO DGBSV = %d\n",info);}
   }
 
   /* Write results to files */
@@ -135,5 +141,9 @@ int main(int argc,char *argv[])
   free(EX_SOL);
   free(X);
   free(AB);
+  free(ipiv);
+  free(ID);
+  free(RES);
+  free(v);
   printf("\n\n--------- End -----------\n");
 }

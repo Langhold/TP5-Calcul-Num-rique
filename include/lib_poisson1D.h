@@ -199,7 +199,7 @@ void richardson_MB(double *AB, double *RHS, double *X, double *MB, int *lab, int
  * @param lab: Leading dimension of the band storage
  * @return Linear index in the band storage array
  */
-int indexABCol(int i, int j, int *lab);
+int indexABColtridiag(int i, int j, int *lab, int *ku);
 
 /**
  * LU factorization for tridiagonal matrices (optimized version of dgbtrf)

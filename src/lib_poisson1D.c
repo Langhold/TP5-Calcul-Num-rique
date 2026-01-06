@@ -6,103 +6,113 @@
 #include "lib_poisson1D.h"
 
 void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
-	
-	for(int i = 0; i<*kv; ++i){
-		for(int j = 0; j<*lab; ++j){
-			AB[i*(*la+*kv) + j] = 0;
-		}
+  int ii, jj, kk;
+  for (jj=0;jj<(*la);jj++){
+	kk = jj*(*lab);
+	if (*kv>=0){
+	  for (ii=0;ii< *kv;ii++){
+		  AB[kk+ii]=0.0;
+	  }
 	}
-	
-	for (int i = 0; i<*la; ++i) {
-		int indx =i* *lab+*kv;
-		AB[indx] = -1;
-		AB[indx+1] =  2;
-		AB[indx+2] = -1;
-	}
-	AB[*kv] = 0;
-	AB[*la**lab-1] = 0;
-	
+	AB[kk+ *kv]=-1.0;
+	AB[kk+ *kv+1]=2.0;
+	AB[kk+ *kv+2]=-1.0;
+  }
+  AB[0]=0.0;
+  if (*kv == 1) {AB[1]=0;}
+  
+  AB[(*lab)*(*la)-1]=0.0;
 }
 
 void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *kv){
-	for(int i = 0; i<*kv; ++i){
-		for(int j = 0; j<*lab; ++j){
-			AB[i*(*la+*kv) + j] = 0;
-		}
+  int ii, jj, kk;
+  for (jj=0;jj<(*la);jj++){
+	kk = jj*(*lab);
+	if (*kv>=0){
+	  for (ii=0;ii< *kv;ii++){
+	AB[kk+ii]=0.0;
+	  }
 	}
-	
-	for (int i = 0; i<*la; ++i) {
-		int indx =i* *lab+*kv;
-		AB[indx+1] = 1;
-	}
+	AB[kk+ *kv]=0.0;
+	AB[kk+ *kv+1]=1.0;
+	AB[kk+ *kv+2]=0.0;
+  }
+  AB[1]=0.0;
+  AB[(*lab)*(*la)-1]=0.0;
 }
 
 void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){
-    for (int i = 0; i < *la; ++i) {
-        RHS[i] = 0.0;
-    }
-	RHS[0] += *BC0;
-	RHS[*la-1] += *BC1;
+  int jj;
+  RHS[0]= *BC0;
+  RHS[(*la)-1]= *BC1;
+  for (jj=1;jj<(*la)-1;jj++){
+	RHS[jj]=0.0;
+  }
 }
 
 void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* BC0, double* BC1){
-	for (int i = 0; i<*la; ++i) {
-		EX_SOL[i] = *BC0 + X[i] * (*BC1-*BC0);
-	}
+  int jj;
+  double h, DELTA_T;
+  DELTA_T=(*BC1)-(*BC0);
+  for (jj=0;jj<(*la);jj++){
+	EX_SOL[jj] = (*BC0) + X[jj]*DELTA_T;
+  }
 }
 
 void set_grid_points_1D(double* x, int* la){
-	const double h = 1/((double)*la+1);
-	for (int i = 0; i<*la; ++i) {
-		x[i] = (i+1)*h;
-	}
+  int jj;
+  double h;
+  h=1.0/(1.0*((*la)+1));
+  for (jj=0;jj<(*la);jj++){
+	x[jj]=(jj+1)*h;
+  }
 }
 
 double relative_forward_error(double* x, double* y, int* la){
-    double diff_norm = 0.0;
-    double x_norm = 0.0;
-
-    for (int i = 0; i < *la; ++i) {
-        const double diff = y[i] - x[i];
-        diff_norm += diff * diff;
-        x_norm += x[i] * x[i];
-    }
-
-    double ferr = sqrt(diff_norm / x_norm);
-    return ferr;
+  double temp, relres;
+  temp = cblas_ddot(*la, x, 1, x,1);
+  temp = sqrt(temp);
+  cblas_daxpy(*la, -1.0, x, 1, y, 1);
+  relres = cblas_ddot(*la, y, 1, y,1);
+  relres = sqrt(relres);
+  relres = relres / temp;
+  return relres;
 }
 
-int indexABCol(int i, int j, int *lab){
-	const int row = i-j;
-	int indx = j* *lab +row;
-	return indx;
-}
-
-static inline int indexABColtridiag(int i, int j, int *lab, int *ku){
+int indexABColtridiag(int i, int j, int *lab, int *ku){
 	const int row = *ku+i-j;
-	int indx = j* *lab +row;       /* raw = ku+1+i-j, col = j, colmajor_indx = col* *lab + row*/
+	int indx = j* *lab +row;       // row = ku+1+i-j, col = j, colmajor_indx = col* *lab + row
 	return indx;
 }
 
-int dgbtrftridiag(int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *ipiv, int *info){
+int dgbtrftridiag(int *la, int *n, int *kl, int *ku, double *AB, int *lab, int *ipiv, int *info){
 	
-	for(int k = 1; k<*n; ++k){
-		int indx_kk = indexABColtridiag(k,k,lab,ku);
-		if (AB[indx_kk] == 0.0f) {
-			*info = -1;
+	//*info = 0;
+	const int kv = 1;
+	
+	
+	const int indx_00 = indexABColtridiag(0, 0,lab,ku);
+	const int indx_n1n = indexABColtridiag(*n-2+kv, *n-1,lab,ku);
+	
+	const double temp = AB[indx_00];
+	
+	
+	for(int i = 0; i<*n-1; ++i){
+		int indx_ii   = indexABColtridiag(i+kv, i, lab, ku);
+		int indx_i1i  = indexABColtridiag(i+1 + kv, i, lab, ku);
+		int indx_ii1  = indexABColtridiag(i+kv, i+1, lab, ku);
+		int indx_i1i1 = indexABColtridiag(i+1 + kv, i+1, lab, ku);
+
+		double pivot = AB[indx_ii];
+
+		if (AB[indx_ii] == 0.0) {
+			*info = 1;
 			return *info;
 		}
-		
-		for (int i = k+1; i<k+*kl; i++) {
-			int indx_ik = indexABColtridiag(i,k,lab,ku);
-			AB[indx_ik] *= 1/AB[indx_kk];
-			for (int j =k+1; j<*n; j++) {
-				int indx_ij = indexABColtridiag(i,j,lab,ku);
-				int indx_jk = indexABColtridiag(j,k,lab,ku);
-				AB[indx_ij] -= AB[indx_ik]  * AB[indx_jk];
-			}
-		}
+		AB[indx_i1i] = AB[indx_i1i]/pivot;
+		AB[indx_i1i1] = AB[indx_i1i1] - AB[indx_i1i] * AB[indx_ii1];
 	}
-  return *info;
+
+	return *info;
 }
 

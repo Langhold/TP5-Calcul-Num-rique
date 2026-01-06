@@ -105,6 +105,7 @@ int main(int argc,char *argv[])
   if (IMPLEM == ALPHA) {
     richardson_alpha(AB, RHS, SOL, &opt_alpha, &lab, &la, &ku, &kl, &tol, &maxit, resvec, &nbite);
   }
+	write_vec(resvec, &nbite, "RESVE.dat");     /* Residual norm at each iteration */
 
   /* Richardson General Tridiag (Preconditioned methods) */
 
